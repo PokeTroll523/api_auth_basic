@@ -5,9 +5,21 @@ import UserMiddleware from '../middlewares/user.middleware.js';
 import AuthMiddleware from '../middlewares/auth.middleware.js';
 
 const router = Router();
-
+router.get('/getAllUsers', async (req, res) => {
+    const response = await UserService.getAllUsers();
+    res.status(response.code).json(response.message);
+});
 router.post('/create', async (req, res) => {
     const response = await UserService.createUser(req);
+    res.status(response.code).json(response.message);
+});
+router.get('/findUsers', async (req, res) => {
+    const response = await UserService.findUsers(req.query);
+    res.status(response.code).json(response.message);
+});
+
+router.post('/bulkCreate', async (req, res) => {
+    const response = await UserService.bulkCreateUsers(req.body.users);
     res.status(response.code).json(response.message);
 });
 
@@ -46,5 +58,6 @@ router.delete('/:id',
        const response = await UserService.deleteUser(req.params.id);
        res.status(response.code).json(response.message);
     });
+
 
 export default router;

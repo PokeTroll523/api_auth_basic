@@ -78,18 +78,7 @@ const updateUser = async (req) => {
 }
 
 const deleteUser = async (id) => {
-    /* await db.User.destroy({
-        where: {
-            id: id
-        }
-    }); */
-    const user = db.User.findOne({
-        where: {
-            id: id,
-            status: true,
-        }
-    });
-    await  db.User.update({
+    await db.User.update({
         status: false
     }, {
         where: {
@@ -102,9 +91,103 @@ const deleteUser = async (id) => {
     };
 }
 
+
+
+const getAllUsers = async () => {
+    const users = await db.User.findAll({
+        where: {
+            status: true
+        }
+    });
+    return {
+        code: 200,
+        message: users
+    };
+}
+
+const findUsers = async (query) => {
+    const whereClause = {};
+
+    if (query.eliminated !== undefined) {
+        whereClause.status = query.eliminated === 'false';
+    }
+
+    if (query.name) {
+        whereClause.name = {
+            [db.Sequelize.Op.like]: `%${query.name}%`
+        };
+    }
+
+    if (query.loggedInBefore) {
+        whereClause.lastLogin = {
+            [db.Sequelize.Op.lt]: new Date(query.loggedInBefore)
+        };
+    }
+
+    if (query.loggedInAfter) {
+        whereClause.lastLogin = {
+            [db.Sequelize.Op.gt]: new Date(query.loggedInAfter)
+        };
+    }
+
+    const users = await db.User.findAll({
+        where: whereClause
+    });
+
+    return {
+        code: 200,
+        message: users
+    };
+}
+
+const bulkCreateUsers = async (users) => {
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (const user of users) {
+        const { name, email, password, password_second, cellphone } = user;
+        if (password !== password_second) {
+            failureCount++;
+            continue;
+        }
+
+        const existingUser = await db.User.findOne({
+            where: {
+                email: email
+            }
+        });
+
+        if (existingUser) {
+            failureCount++;
+            continue;
+        }
+
+        const encryptedPassword = await bcrypt.hash(password, 10);
+
+        await db.User.create({
+            name,
+            email,
+            password: encryptedPassword,
+            cellphone,
+            status: true
+        });
+
+        successCount++;
+    }
+
+    return {
+        code: 200,
+        message: `Successfully created ${successCount} users, failed to create ${failureCount} users`
+    };
+}
+
+
 export default {
     createUser,
     getUserById,
     updateUser,
     deleteUser,
+    getAllUsers,
+    findUsers,
+    bulkCreateUsers,
 }
