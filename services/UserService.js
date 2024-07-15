@@ -108,8 +108,12 @@ const getAllUsers = async () => {
 const findUsers = async (query) => {
     const whereClause = {};
 
-    if (query.eliminated !== undefined) {
-        whereClause.status = query.eliminated === 'false';
+    if (query.status !== undefined) {
+        if(query.status=="true"){
+        whereClause.status = true
+        }else{
+        whereClause.status = false
+        }
     }
 
     if (query.name) {
